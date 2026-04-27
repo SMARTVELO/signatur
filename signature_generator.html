@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>smartvélo — Signatur-Generator</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #fafafa;
+    color: #1a1a1a;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+  header {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+  }
+  main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    padding: 22px;
+  }
+  .panel h2 {
+    font-size: 11px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .field {
+    margin-bottom: 14px;
+  }
+  .field label.label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 5px;
+  }
+  .field input[type="text"],
+  .field input[type="email"],
+  .field input[type="tel"],
+  .field input[type="url"],
+  .field select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: white;
+    transition: border-color 0.1s;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: #1a1a1a;
+  }
+  .field input:disabled, .field select:disabled {
+    background: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+  }
+  .field-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #555;
+    margin-top: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .field-checkbox input { margin: 0; cursor: pointer; }
+  .field-checkbox input:disabled { cursor: not-allowed; }
+  .field-checkbox.disabled { color: #aaa; cursor: not-allowed; }
+  .hint {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .lang-switch {
+    display: flex;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .lang-switch button {
+    flex: 1;
+    padding: 9px 12px;
+    border: none;
+    background: white;
+    color: #555;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.1s;
+    margin: 0;
+    border-radius: 0;
+  }
+  .lang-switch button + button {
+    border-left: 1px solid #d4d4d4;
+  }
+  .lang-switch button:hover { background: #fafafa; }
+  .lang-switch button.active {
+    background: #1a1a1a;
+    color: white;
+  }
+  .lang-switch button.active:hover { background: #1a1a1a; }
+  .button-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #f0f0f0;
+  }
+  button {
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.1s;
+    border: 1px solid transparent;
+  }
+  button.primary {
+    background: #1a1a1a;
+    color: white;
+  }
+  button.primary:hover { background: #000; }
+  button.secondary {
+    background: white;
+    color: #1a1a1a;
+    border-color: #1a1a1a;
+  }
+  button.secondary:hover { background: #f5f5f5; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 12px;
+    min-height: 16px;
+    transition: opacity 0.2s;
+  }
+  #status.success { color: #1a7a3a; }
+  #status.error { color: #c33; }
+  .preview-wrap {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .preview-header {
+    padding: 14px 22px;
+    background: #fafafa;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .preview-meta { font-size: 11px; color: #999; font-weight: 400; text-transform: none; letter-spacing: 0; }
+  #preview {
+    padding: 28px;
+    background: white;
+    min-height: 280px;
+  }
+  .instructions {
+    margin-top: 24px;
+    padding: 18px 22px;
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+  }
+  .instructions h3 {
+    font-size: 11px;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .instructions ol { margin: 0; padding-left: 20px; }
+  .instructions li { margin-bottom: 4px; }
+  .instructions code {
+    background: #f0f0f0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  details summary {
+    cursor: pointer;
+    padding: 4px 0;
+    user-select: none;
+  }
+  details summary:hover { color: #1a1a1a; }
+  details[open] summary { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1>smartvélo Signatur-Generator</h1>
+    <p>Felder ausfüllen · Vorschau prüfen · in Outlook einfügen</p>
+  </header>
+
+  <main>
+
+    <div class="panel">
+      <h2>Daten</h2>
+      <form id="sigForm" autocomplete="off">
+
+        <div class="field">
+          <label class="label">Sprache</label>
+          <div class="lang-switch" id="langSwitch">
+            <button type="button" data-lang="de" class="active">Deutsch</button>
+            <button type="button" data-lang="en">English</button>
+          </div>
+          <input type="hidden" name="language" id="language" value="de">
+        </div>
+
+        <div class="field">
+          <label class="label" for="company">Gesellschaft</label>
+          <select name="company" id="company">
+            <option value="mobility" selected>smartvélo mobility GmbH</option>
+            <option value="service">smartvélo service GmbH</option>
+          </select>
+          <div class="hint" id="companyHint">Mit Lieferadresse Venloer Str. 509</div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="firstName">Vorname</label>
+          <input type="text" name="firstName" id="firstName" placeholder="Philipp">
+        </div>
+
+        <div class="field">
+          <label class="label" for="lastName">Nachname</label>
+          <input type="text" name="lastName" id="lastName" placeholder="Klei">
+        </div>
+
+        <div class="field">
+          <label class="label" for="emailCustom">E-Mail</label>
+          <input type="email" name="emailCustom" id="emailCustom" placeholder="vorname@smart-velo.com" disabled>
+          <label class="field-checkbox">
+            <input type="checkbox" name="emailOverride" id="emailOverride">
+            <span>E-Mail manuell eingeben</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label class="label" for="position">Position</label>
+          <input type="text" name="position" id="position" placeholder="Business Development Associate">
+        </div>
+
+        <div class="field">
+          <label class="label" for="greeting">Grußformel</label>
+          <input type="text" name="greeting" id="greeting" value="Viele Grüße">
+        </div>
+
+        <div class="field">
+          <label class="label" for="phone">Telefon</label>
+          <input type="tel" name="phone" id="phone" placeholder="+49 151 53409285">
+        </div>
+
+        <div class="field">
+          <label class="label" for="linkedin">Persönliches LinkedIn (kompletter Link)</label>
+          <input type="url" name="linkedin" id="linkedin" placeholder="https://www.linkedin.com/in/...">
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="primary" id="copyBtn">In Zwischenablage kopieren</button>
+          <button type="button" class="secondary" id="downloadBtn">Als .htm-Datei herunterladen</button>
+          <div id="status"></div>
+        </div>
+
+      </form>
+    </div>
+
+    <div>
+      <div class="preview-wrap">
+        <div class="preview-header">
+          <span>Vorschau</span>
+          <span class="preview-meta" id="previewMeta"></span>
+        </div>
+        <div id="preview"></div>
+      </div>
+
+      <div class="instructions">
+        <details open>
+          <summary><strong>Outlook Windows / Mac (Methode 1: Copy &amp; Paste)</strong></summary>
+          <ol>
+            <li>Auf <strong>„In Zwischenablage kopieren"</strong> klicken</li>
+            <li>Outlook → <code>Datei</code> → <code>Optionen</code> → <code>E-Mail</code> → <code>Signaturen</code></li>
+            <li>Neue Signatur anlegen, in das Editor-Feld klicken</li>
+            <li><code>Strg+V</code> (Windows) oder <code>Cmd+V</code> (Mac)</li>
+            <li>Speichern</li>
+          </ol>
+        </details>
+        <details>
+          <summary><strong>Outlook Windows (Methode 2: Direkt-Installation als .htm)</strong></summary>
+          <ol>
+            <li><strong>„Als .htm-Datei herunterladen"</strong></li>
+            <li>Datei nach <code>%APPDATA%\Microsoft\Signatures\</code> kopieren</li>
+            <li>Outlook neu starten — die Signatur erscheint im Auswahlmenü</li>
+          </ol>
+        </details>
+        <details>
+          <summary><strong>Apple Mail / Outlook on the Web</strong></summary>
+          <ol>
+            <li>Auf <strong>„In Zwischenablage kopieren"</strong> klicken</li>
+            <li>Mail-App → Einstellungen → Signaturen → Neu</li>
+            <li>In das Editor-Feld klicken, <code>Cmd+V</code> einfügen</li>
+          </ol>
+        </details>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+const ICONS = {"mail": "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAACU0lEQVR42u2WPWgaYRjHH/XEePg1nKAZ+oHiUIgEoShNwObocDUUKnou0rlgwaGDRbjpcBKXdhAKpVCwOiQWLWKXKBiSQYvo4hA5lS4uvYKHEBXLXZecHPlqDCbQ4n96H/7w/t6X5/9+ACz1r0smLdRqtcxisWAqlUq1iMknk8mk0+mwo9FIOAPEMAyJRCLf9Xr9+iJ3xHFcMx6PP2RZ9jcAgFw0tra2thcNAwDQ6/XrOI4/E2u5xLgjjlmW3ed5fnxdCM/zY5Zl98XaYDDcOwMU1e12P1AU5aZp2sAwTHJeGMMwSZqmDRRFuXu93sfTPjJrpkwmBwAwGo2PzGbzSr/fHycSiVcbGxvvfD7fNxRF718GOj4+7mWz2aeHh4dHgiDA6urqCoZhrguBorRa7QOKon5VKpUXuVzuy8HBwVGj0bB4vd7g5ubmJ3FhUtXr9deZTObtcDjklUolEATxmCCIPIIgusuAs8QqFAoUx/Gs3W6vpNNpf6vVYlOpVKpWqxWCweBnk8nkOen1zAcAsNlsBql/nqRA4bSJYZg7HA7/rFarod3d3fftdnsQi8W2PR7PEwCAYrG4N51OQafTyf1+/0un0/nXniMXXQJSOZ3O5Nra2ptCofC8XC438/n83knfweVyWUiSLGo0GttVQoVcNX0oit4NBAINh8OR3NnZiQAAkCQZt1qtoXlSjMwbe6vVGopGo6HrnlG55FjIbuPylt/2a7EE3hyQ47gfNwUZDAa9M8BSqfSV47jmDcAapVKpcGtfDIZh2PF4LCx/c/+P/gB1NN4sTtuGrAAAAABJRU5ErkJggg==", "phone": "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAACwklEQVR42t2WT0jbUBzHX/6KMZldRuoMYmljV/AgIuitQi+lXnawG3XQ3TwMd5mHXt1NmJTdM3bbLm6wwZzSHsIGFg/rMgvDUEuVBhnrJbWaWVLTJLssoxaLFZLD9j29vPf78eH3y5f3ewD874I6N2iaRimKwg3DMKvVqtZqtdwDLiws3I9EIm/sb0VRcul0OlKr1RyjIu2VLS4ufm8/JAhiFAAgSpK07xQQthcUReGXBQSDwXtOthS+KmBkZCSO47jzQF3XjUt7jiCEz+cbdBzYaDS6GsPv94ccB56dnRmmaWqXBXk8HtaNloJqtZrpDDBN87xQKHx2xTSVSmXDXquqKm1vbz9cW1u7VSqV6q5cO5OTk8M8z1s8z1sMw2BuMC5UuLe391PTtB8AAOD1egfdACId/wtQFFUOBAIPaJoe2NnZ2XK1QgAAyGazH3VdrwWDwcfT09OjrgNPT0/NTCYzDwAAiUQi6/F4ENdaauvg4ECemJgIMQwT4ThuOJ/PbxiG4R7QsixQLBY/zMzMJIaGhqI+nw/d3d391A0aCoVuRqPRuyzLDsAw/EtV1aZpmr0N4HZxHEctLy9XMAyjDw8PX/I8/6her1+gBgIBMpVKKTAM/73hDcNoHB0dvS2Xy+8EQdhqn6fQVS3gOI5aWlr6SpLkHVVVi+vr67F8Pi/b58lkMhkOh191y1cUJbeyshK2Xw5XGuL4+Pi8UCjwY2NjnNfrjUxNTT0ZHx+/fXJy8gWCoFY8Hn/d19fHdMsnCGJUFMVnqqq2eqqwbUyBubm52Vgs9h7DMPo6RlldXR2QZbnRU4XtRiqVSnIul0vDMPyNZdlZFEVv9JK7ubn5VNM061pAW81m05IkaV8QhOeyLL/QdV2CYdggSdIPQRDaGS8IwrwoilLPpulVKIoCkiSR/v5+FMdx5M/EOXfyxfdv6DenJh3uSveH8QAAAABJRU5ErkJggg==", "globe": "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", "map-pin": "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAADFklEQVR42t2WP0waURzHf09LKdHwRweOgkokUSDhougNdGApHWiC7NqkNpB0alLTwa7GpUMlthLSmBAXEwdNB2NDYhyoWkot0YQcbPUkOWtORfEwdyrCdWrS0IMDbIf2jb/3/b7Pe7/3u3s/gP99oHrEcrkcDAaDUqlUtgIAsCybp2k6f3l5+WeB3d3drW63+7nFYnkhk8nUv84VCoWTdDodiEQibyiKOr8RUCaTwfDwsM/hcMwihJqqaQVBKMViMf/CwsJcoVCoqGuulr6xsbFZHMcnEEKSmUAIoc7OTm9vb68ukUisFIvF2oEIIfD7/eNWq3W83qJoa2sb1Gq159vb25/F5kXTNDAw0NHf3/+q0Uq02+2v+/r67tYM9Hg876rdFcMwqwzDrAqCUKqk83q9omvcKg8YDAYFhmEPxcSZTGY+HA77GIa5AgDQarW3fT5fuKur61G5VqfTefR6/Z39/f2Lqic0m80WMRjHcVQoFBr9CQMAYBjmKhQKjXIclxHzmM1ms2RKNRpNh5iZJMmpXC73W+nlcrliKpWaEvOo1WqDJFAulyvFzPl8/nul+2JZlhaLKxQKjSSQ5/lTMbPJZPJUAppMJq9YnOf5E0ng0dHRrpjZaDQ+cTqd1vK40+m0Go3Gx2Kew8PDb5JVSlEUVekkIyMjqZ6enmfJZHIFAADHcQ9BEG8r6SmK2pME0jTNZ7PZWHt7+z2xRQiCmCEIYkbq4z8+Pv5I0/SFZEoFQYDNzc1xuOFYX19/WfOfJhqNfsrn8+lGYSzLkhsbG19qBnIcJywtLXkaBS4uLno4jhNqBgIAxOPxXZIkJ+uFkSQ5sbW1tVf3ewgAkEwmoziO25RKpaUW2MHBwYdgMPi0oQcYAOD6+hpSqdR7u93uVigU+mra09PTr9PT0w/Ozs5K1XTNUrvmOK60s7MzZ7PZHC0tLSYxDcMwq4FA4H42m72WWq+5llTxPF+Kx+PzGIZdYBjmKruzyWAw6Jc6WUNtIkIIXC7X4NDQUAQAYHl52b22tpYQBOHvNrMqlapJpVI1/ROd9w8gyzt2cgpy2QAAAABJRU5ErkJggg==", "truck": "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAACYUlEQVR42u2WTWjTYBjHn+xtk9maEUwGrasUCu2kCtrLRHtp0MvQYkEEIVDYoQxvHtxdL16KBz2ZhsKuemhvZbkMhAYs9mOGHvphD5LFW11H19C1TeplhU22kW1tEfE5vu/zf3487/t/PwD+9cB8Ph8VjUZT8/Pz7HkKtNvtSjqdfixJUs1M/sxFYAAAJEle5ziuZLfbMVPAi8BGgRCyMQxzyRRw2ntoGVehlZWVT71eb6fT6SgbGxvxarW6c6xpeJ4fjrsLXdc1QRC8pVLp58SWNJVK3U0kEteKxeJLhJAtFovVA4HA1YkBK5WKXCgUtgVBeJvL5Z6fBB27aQzDgPX19Q8nQSfi0hE0n8+/GEHdbrd9osfCMAxIJpPvyuXya4SQbWlp6cFEjsWf4xRF3QQAIAiCHCvQ6XQ+/CtvmqkDUTgcfjUNEI7jBI7j31EoFHpGEARzeLJWq71PJBL3s9nsG4fDQdI0fcdM0dN0JEn6/H5/DAsGgz6O40oIIRsAwHA4HKytrRHtdts4SJyJx+P7GIadajAzum63q1okSaptbW1dXlxcXFhdXVV6vd6vvb09Y5TU6XSMfr/fwnGc4Xne1Ww2j1ifpukrZnW7u7v7loPJoSzL291uV52dnV1gWfbW5ubmNwAAlmUDOI4zmqb9kGVZHQwGRzpTVVU7i+7It2B5efleJBKRAAAURfmIYdiMy+V6OnoNRFH8ctxynkWHDgsbjYZitVq/ejyeJxRF3Z6bm7uh67omiuKjTCbz+aT9O4vu2I8PRVHI6/UuAADU63W11WrpZlx6Xt3/uFD8BgAPUMkpcqslAAAAAElFTkSuQmCC", "linkedin": "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAACW0lEQVR42u2WzasSURjG3xlHE2Um1Pwq/AADmRYhgYhIiJDQop0uIjJuBe0K76aFC4mCMGiRC0G5Yaj/QYrLzIWILUI0EdokjiJFQqWOepmPFjU1ehcZzNw2vZuZ5xnO+c1z5sw7A3DMhQAAIAgCNptNo9Vq1VJOznEcPx6Pv87nc07wMACAWCx2MxAI5OVItFqtxqlUyjWZTNYAACgAgM/neybXEqrV6jMej+eCoFEAAAzDCDmfG4ZhJzaA29VoNPYymYylWq2GWZalJYVvG71e73GxWCwAAHQ6nY9KpfJqOBx+KRXwSMLRaNQQa4qi3kmZ8AjQ4/HcValUILwuXq/3hqxLajabLyeTyVf9fv/A6XResdvt12QFAgAYjcaQ0WgM7TIBTdMfptPpG6VSiZtMpksoiqr+CjgYDF6k0+nbgo5Go3uBQCDf7XYf5PP5h4Ifj8eL9Xr9UbPZfM9xPxoJjuNoJBK55ff7D3YGsix7SNM0L2iGYZY/jyuxXyqV7lAUtRSPnc1mXKFQeK7X68+53e79nTbNriXAEATZ8Hmeh1qt9nTnXbpr4TiOJhKJUjab5ePx+BMU/T3VcDj8JDkwGAxedDgc1wEASJK873K5TgrX5vM5KznQYrGcF2uDwXBKOF+v1zzHcYeSAjEM04i1QqFQbH8OJQVK1tr+AyXvpRqN5jRJknpB63S6swAABEE4xT5BEE7xOKvV6iZJ8vOfwiAAALlcjpczVaVSCZXL5de/7oJhmG9yAhmGWW/EbrVa9+SCLZdLqt1uvz22H+HRaPRlsVjw8K/qO8Re0+HJQsynAAAAAElFTkSuQmCC", "instagram": "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAFn0lEQVR42rWWX0xTdxTHv71/KiDcXrmlsfGhpZWi2On+8GczPKzUBJKNOJgaxtweeHFb+iAuMdkWE7IHxzIHW1IzX5ZlmUGCQnWbSyEU3oAudY2JQqFQaExs6B9sgSH2/mEPu9fVWmRTd57u/Z2T88k5v3PO76iQJTt27CCrqqpeLisrq9dqta8wDFNBEASt6AsKCkoz7QVBWE6n0wnlP5VKTS4tLd2cnp7+xefz+RKJhJBpr1I+SJJEU1NTo81m66EoqhDPQURRXBsdHW0dGBi4JoriP0CSJOFwOM5WVFR8ohgnEomxSCTiSaVSc5IkiQDA8/waz/P3sx3n5+ezKpWKBKDSaDSGnTt3vq7T6eyKfnJy8gun0/mpKIp/A48ePXr40KFDVwEgHA5f7O3t/SgUCq08S3RGo3F7a2vrBYPBcBwAhoaGGvv7+38lOY6j2trafARB0OFw+Kdz5869H4/H008LIggCLMuSi4uLD7xer8tqtVo0Gs0LBoPhzfHx8a+IqqqqSpIkCwCgp6fnw3T6qVmgKAqnT5/+vrOzU3A4HJ/zPI9Lly59IOuYysrKlwiLxdIIANFo1LOwsPDnVk5pmoZOp6N1Oh1N0/QjOp1Ol1daWtoGAFar9UxhYSERCoVWEonEGABYLJYGiuO4FwEgEomMPglksVjY+vr6U3v27GlXqlgQhNVAINDtdru/DgaDqWg0uh4Ohy8aDIbjU1NTX66urkqybw/HcQeLi4sPUEVFRWUAsLy8HN7sTo4dO3bEZrNdzpHCQqvVesZqtZ7xeDxNV65cudrZ2fmeVqtti8Vi/MbGBmTfCwDAMIyFIggiT+6ZnJeXCUun03Gv19seCoUmAMBkMr1aU1PTrVartXa73QWgqa+v72o0GuWzhsMDuf3yKYIg1AAgSZKQK40K7O7du9ecTueRzMkxNjY263a7ex0Ox4Ber2+02+0uv9/PBoPBVKYfSZJ4OVt5BEEQ2+RDMRvY0NDwsRJZNkyReDwuOJ3OZp7nlwCgvr7+ZI6JowC3EZtFSNM0ysvLTwLAxMTEyVywTKjX620HgL17957Krl7FN0mSBZsCWZallWqcn5//fat2Ue6VoiiGZVk6K8K0DMwj8D+IUp05q14UxXWZrs5UJJNJXhCEZaUat4KYzebX5AGfTCaTfFZrUXIW04QoimuZh4rwPI9AIPAtANTU1HRptVpqM5hWq6Wrq6u7ACAQCHwjCAI2BUqSpPQIne1ocHCwCwDUarXW4XAM5IKWlJTQDofDRdN0MQC43e7uHMODlIEPKEmS1uXDx4AzMzPJkZGRt+vq6vr1en1jR0fHotfrbZ+bmxsHgN27dx+srq7uUmDDw8OHZ2dnl3MAH0ZIiaJ4X66ubbnSdfny5YGNjY1mu90+QNN0cW1t7Y+1tbWP2Q0PD7/V39//cy4fSn1IkrROrayszDIMs59hGGMuY0mS0NfX5/L7/WxDQ0O7PLwZZZ+Zmprqcrvd3bkiU0Sj0RjlmTpDJRKJm7t27WrW6/W2J1VhMBhMBYPBDpqmO5Q+SyaTPM/zW7aJXq+vA4ClpSU/MTMz8xsAcBxXazKZtlyeeJ5HLBbjY7HYv4IZjcbtJSUlNgCYnp6+Tvh8Pr8gCKsA0NLS8p1arX5uA0CtVqO1tfWC8nb6fD4fub6+vlFQUHDLbDa/w7Ls/n379pnv3LkzlN28/1VMJlPRiRMnfjAYDO8CgMfjOXLjxo3ApmtiLBYbjUQiI6lUKgxgY7MVkSAIKi8vT6P0m0ajMev1ejvHcQcVm9u3b589f/78Zw/XRAXa3Nx82Gaz9ShL1bOKIAirIyMjLS6X67okSY9u3opwHEdVVlZWlpeXv1FcXHyAYZgKlUpFyHfCKS2hyNra2nzmQ5tKpW7F4/E/gsHgoM/n89+7d++Rd/YvpS6jMNHmfmkAAAAASUVORK5CYII="};
+const LOGO = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABQCAYAAACpv3NFAAALaElEQVR42tWcfZBVZR3HP/fc5S1kAeNlg3UJUEPkrTSgECTRqcG3yqapNG3GzBpzMgfFktLKEcsZG0cHjWZ6UWEgNIIIbCYKKcIQKBWMBRVBMN7fFoRl9+7tj/N9OL999pzL3nv35d5n5sy5955znvN7f35vz4XOGSkgDVTosz+GAV8GfgVsAU4DK4EqXa+gzMbZEB4ETAceAVYDh4CsOZp0/i8wXs+kE+YqGYQDIRzEXO8PXAX8BFgVg7BDOmOQz+h8ErjVzBWUA8J9gCnA94E/A3tjEM4ADUCjQTruHvf5caCLkYZOQTid8PJzgInA3cASYFcCh8+GcDbhuUZ9/itQUwp2oTvwUeAOYCGwPQfg+SKcdJzW+R3gcsOYDuF+V2CkdPG3wFZPPN3hEM4UgWiTsQe55puVQwUTR0WeiAN8EFgBXBJD8UyMiuQzfKRSZg7/XaeA/4n4b8qQpkWgvJFq7QgE2DXifF+gXsYolcd8cYgGOZ7fJ1HfAryhY5tsy/FixbmQZ7LAaGAxMFxUr2gFslY64kYd8K44ulmI1gI7RIRcBtlKYLsSwKlOI1ANLJLFbzQS4ouvPxqAPcBb4uomOTlvA+/JwMWNtGGAT9gOkwALTAboBTwLXJ9w30FxcKvh6lZx+mgOVUt5EkSxyLY1ARygTTo/DVwhjm4Rslu0JO5NAN7qfptxtSMJYG0CwAeA93OoTRBjG3LZi2w5EABPXAPD1ZRxgApVM4w/ULIEsCoRGOfFvqcKGKzIb4BsR6WuH9MKsFdGcLeMZJxdaGpLyUi1IeIpbxkaAlwGTAXGAUPlRLVmHJTt+I+ixX/IkFrJaDepKCTOd6MvcIs8xaM5IrpGLYX2yOUyHwOWAzfrHZRCTsAiXgPMBnbGxAINOZD1/fyke+2cO/WumgRYOpTrlcADElk/AHIIFRMI2RxBo0eMQ3p3ZTHSUEgs4PTueqWwRui79QR9rhyQS7tZ3t97wBEdTnV6y0Cer0jzI0C/hECrybjetcBM5R18GNtF5HsCcwwnGowYW27vAOaKUP0LeN9APTtXc1mpyJiEivt9jvyQvFQilQfyGeACYB7wcUNlxxH30jUC+vcmUksBo4CxwEVaIaqMY9Sg0PYducqvirMYVfsccBswyUiElbgAeAW4Sa52RRH+R2zOYLKAzBrKW518GbjBPNcF+CwwH9jv6fZ+BT+bdGyNSYzuFCGnefB8AVjr2RwL0x4tv22SJnMTTJOLa1/ozgeAO80zVTJOe00Wd6nSZRMk2l0S0mqDROh7gL8YlXoT+K4xeIHeeTABphPAlcUSwYn0FRLluBetlLFyCNxvCLWasLjRtwgGVAG3A69pzn367sYIwWBhckQ7bqQnXSjy42Sps8bwuBc8Zu67XCKdFeemxKweFbo/iMkepbw0Wlxu7zpgvSHuaKNqP0+A8QgwJl8iBMZ3326oayf+jrl/pn7bLUPl+wvFeGpxSZXbJGUN8gzduMsjgpOIt7QKpVqTMLUvXJ5g8Jy+dwN+qd/mAecaAraHZ2aJ+WEj+j8y99yRYBj/1FqGOMDv9iZw55m63hV4Qb/NKDDLXKxhDgirQ1ngKQP7zATYZ5xNFQJjWE7EiNLTBoBF+u3WTgpKAgPvfYLlZ+b6LzzVbRROF3m4xhJghXnY6fx642U9pt++boxQZ0RkKSMNPxRM39b3HsZgZgwTlycRwInFNTFG7wRh2QsZnSzwA4N8Z4fjjgi/FmyT9f1SwuJJoyfJ031VSJmJXvEiuizwkO67QNZ3mVGFUqjPO+veHXhdcUMfXXsoBp91BvaUNSrTY4KNtxWlpQjL2seUzmrVktIJuYkxwuFJfe+jpdwP1qZbgxqYZa/Jo5Zb8q719D5N6Q3HyJ8K1rH6fqcnBU1aFpvZggvls1td2SHfO604frOX8S214aSyUjGCU9XeijKtf3BKOJ8Z93gprCzwsGcYbyhh7vuq8D2i+iXCJeul2O61lFvlUageuFjXVxKWsfKtAHfGcNLZX1x+ytiGek/CVzlchpsMrru4Vg+ep4ce6EBPr62k4HdShR5CdI2H41FgeAB8QnpjS1IrjfFLyfOjFPLwediD5xSfTBZef9M1h2clMDFQegsvrbVa56sl/rXm4VIfrnL0d4n9dJOqcxLiGDkR4CVPNA5Lh9ISoefKwPgl5TrXARv0uTpG1VcHsgF27FLOrkYi9K8CU+ilYAfWKWPVQ6n4nd59QwIT5DjxflfnYTq/UUbi749NhGn8aon9bg+XcwKTaHRjr1kBEOXKjQA+MwfqvNu7rzIue3NCZ1fMOEb5jsM6u6r0Sd99DnI8lCpjxJ0EuMJML50PJCVB7OiSMFk5DifdrkLUvTUE6K1zfRl5f0nLoMsLHHI6H0eAet8weMZvQBkT4NyzEOBkQNibY8eHdHZrZk0Z24QLpcK79H2wd70uIGpWdAgOkdhv09o5pgyiwCQjOJqwnLafsI5R7eF6NKB5GdpRaajEZpsJJsopEHKl80nARn0fRvO2GoBtgfGVXSDRTQGSyxOM1zLSVCZSkDKebA1hrTJFmNnu6jFyfUBY13cG0V10XF9MuP3lMkovEZorKeJCeYAXhcsUL+rNugixnyy+jZJqJQk9FBG+UEYRoZOA1wg7TVLCo9bDcZdZJXieqOfGpY6v0rXH9fvgMpACV6IbLxy+pe+fpnnXWZNwPjO+6t2QJWyBh7Brqwl4tAykwMG2WEbcOULzaJkUvck+2I+oj8cVRepMruA3cpgGlbAUOOQvFR73GQbW0by/Yb8JkM48OIeWZaQnjG9QDywoUffY9jW8LP12AdATtEz5P2lxdw9eTJQ6dmWk40Ql5Rl6+NoSJIKD5S7B6DpVRhKV+p1kn9LvzdTZifT8GClYYqLE1YR9N9UlZA8qPNF/xlxbGoNPbI7TFRRGEFaA/eYI14szVPmCjSa0DEpA7wdpKa810ezNtCz1nxSOsXbMTfZIzIOHiXqCP0W0b7eyEyXBcb4v4b6Co0ZdRwhmn5Gzc8HrqNJLMYAtlWfFdUfdLxH1CfbqYJtgmyJqhPwpwiZMl8/YEAP/Fnm1OYu7jjJTiVpLLAWXmozRV/Tbq0Y6gnZWCduL9EnC1t06VOAQYZbRsj8oQ7TBOt1avZpFfLfVAsOBKyV6p4GveXMEbYx42hD5XqIW2rEG+QUJMM/KR0rtmvo8zbeqO0n4I1EL7PlE1eUXiToz7Vz59hTYP2SwYypR89NCosx1X8EUh/yiGOlpNQA9gX8mTLzRIBsQ9hi4a/OBjyVwssJw1D8qEkR0qtzbrIKzW8y1sYIlDsY1hIWfghI6gckJbkiQhCM0b14eTthPmDUAfJOoypQPA0aKqK8T9Sw86uUov0FU7/OR32DuLVgd3YMD5WLaF9jdIcs8jg8HfkzUmuJC7GeE1Be1nE7QMY2ws/x+wrq+/QeKzfJCq8z8lxiRt7A42Naa3GbRtigwGdUltOwkc9JwknCDwyiPk5NEjJdovrkq6dhD2JE2M0aNRhF2gZ6K8VUcEf5gluY2M8R2otm03C9kd468L2t8NS0LEV0UWE3Q9c/r+IzScNUxQPcg7FNaSLQXwSJv9w09nABzmzkgzpBc54l3YwwhsnKo5gI3ykvr1or3dJf+30jYjb6VlnsR/XdtF0zka/BSBRAhkLgNAB6UIbJbWd1ucn/pqyes1rp9wXUyoil5b72kt4MIK9PdvGRtNmbujFTiQcX4adp4b/HZnCXkha0g/t9jitk8mWvTpNsDMCEBpg5PQqDM8bO03DPcFEOQXIe91/+/ocNaSSYluMedloa2AJwn32AZYVWm2D9M2qe5bidq2qCtUnOpdlCLjEeM8YSteOPkH/TUkuobxHrCZowThPt8/q31fB1RbS/pPQWP/wOl+L/h2EZswwAAAABJRU5ErkJggg==";
+
+const COMPANIES = {
+  mobility: {
+    name: "smartvélo mobility GmbH",
+    address: "Venloer Str. 515",
+    city_de: "50825 Köln",
+    city_en: "50825 Cologne, Germany",
+    register_de: "HRB 109212 B, Amtsgericht Köln",
+    register_en: "HRB 109212 B, Local Court Cologne",
+    director_de: "Geschäftsführer: Konrad Essers",
+    director_en: "Managing Director: Konrad Essers",
+    delivery: "Venloer Str. 509",
+    hasDelivery: true
+  },
+  service: {
+    name: "smartvélo service GmbH",
+    address: "Venloer Str. 509",
+    city_de: "50825 Köln",
+    city_en: "50825 Cologne, Germany",
+    register_de: "HRB 122014, Amtsgericht Köln",
+    register_en: "HRB 122014, Local Court Cologne",
+    director_de: "Geschäftsführerin: Anna Essers",
+    director_en: "Managing Director: Anna Essers",
+    delivery: null,
+    hasDelivery: false
+  }
+};
+
+const FONT = "Arial,Helvetica,sans-serif";
+
+const I18N = {
+  de: {
+    greeting: "Viele Grüße",
+    deliveryPrefix: "Lieferung:",
+    placeholderName: "Vorname Nachname"
+  },
+  en: {
+    greeting: "Best regards",
+    deliveryPrefix: "Delivery:",
+    placeholderName: "First Last"
+  }
+};
+
+// Greetings considered "default" (auto-replaced when language switches)
+const KNOWN_GREETINGS = ["Viele Grüße", "Best regards", "Mit freundlichen Grüßen", "Kind regards"];
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str);
+}
+
+// Normalize first name → email local part (lowercase, strip diacritics)
+function emailLocal(firstName) {
+  return (firstName || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9.\-]/g, "");
+}
+
+function img(name, alt, mr) {
+  if (mr === undefined) mr = 6;
+  return '<img src="data:image/png;base64,' + ICONS[name] + '" '
+    + 'alt="' + escapeAttr(alt || "") + '" width="14" height="14" '
+    + 'style="width:14px;height:14px;border:0;outline:none;'
+    + 'vertical-align:middle;margin-right:' + mr + 'px;" />';
+}
+
+function generateSignature(d) {
+  const lang = (d.language === "en") ? "en" : "de";
+  const t = I18N[lang];
+  const company = COMPANIES[d.company];
+  const city = lang === "en" ? company.city_en : company.city_de;
+  const register = lang === "en" ? company.register_en : company.register_de;
+  const director = lang === "en" ? company.director_en : company.director_de;
+
+  const fullName = (d.firstName + " " + d.lastName).trim() || t.placeholderName;
+
+  let email = "";
+  if (d.emailOverride && d.emailCustom) {
+    email = d.emailCustom;
+  } else if (d.firstName) {
+    email = emailLocal(d.firstName) + "@smart-velo.com";
+  }
+
+  const phoneTel = (d.phone || "").replace(/[^\d+]/g, "");
+
+  const addrFull = company.name + "&nbsp;·&nbsp;" + company.address + "&nbsp;·&nbsp;" + city;
+  const addrUrl = "https://maps.google.com/?q=" + encodeURIComponent(company.address + ", " + city);
+
+  // Outer wrapper: display:inline-block makes the signature shrink-to-fit its widest
+  // child (the legal line at the bottom). Combined with the floated logo, this means
+  // the logo's right edge aligns with the right edge of the legal line — no gap.
+  let html = '<div style="display:inline-block;max-width:500px;font-family:' + FONT + ';font-size:13px;line-height:1.4;color:#555;">';
+
+  // Greeting
+  html += '<div style="font-family:' + FONT + ';font-size:12px;color:#000;padding-bottom:16px;">'
+    + escapeHtml(d.greeting || t.greeting) + '</div>';
+
+  // Name + Logo header — float-based, no table.
+  // Logo uses HTML align="right" (legacy attribute) + CSS float:right.
+  // Word's HTML renderer (Outlook for Windows) doesn't reliably honor CSS float
+  // on inline elements, but it DOES honor the legacy align="right" attribute on
+  // <img>. Modern clients (Outlook Mac/Web, Apple Mail, Gmail) honor either.
+  html += '<div style="overflow:hidden;margin:0 0 12px 0;font-family:' + FONT + ';">';
+  html += '<a href="https://www.smartvelo-mobility.com" style="text-decoration:none;border:0;">';
+  html += '<img src="data:image/png;base64,' + LOGO + '" alt="smartvélo" '
+    + 'align="right" hspace="0" vspace="0" '
+    + 'width="32" height="40" '
+    + 'style="float:right;display:block;margin:0 0 0 16px;border:0;outline:none;" />';
+  html += '</a>';
+  html += '<div style="font-family:' + FONT + ';font-size:13px;font-weight:bold;color:#1a1a1a;line-height:1.3;padding-top:5px;">' + escapeHtml(fullName) + '</div>';
+  if (d.position) {
+    html += '<div style="font-family:' + FONT + ';font-size:12px;color:#888;line-height:1.3;margin-top:2px;">' + escapeHtml(d.position) + '</div>';
+  }
+  html += '</div>';
+
+  // Divider — clear:both ensures it sits below the floated logo even if Outlook's Word
+  // renderer doesn't fully honor overflow:hidden on the header container above
+  html += '<div style="clear:both;border-top:1px solid #ebebeb;height:1px;line-height:1px;font-size:1px;margin-bottom:10px;">&nbsp;</div>';
+
+  // Contact rows
+  if (email) {
+    html += '<div style="font-family:' + FONT + ';font-size:11px;color:#777;line-height:1.8;padding-bottom:2px;">'
+      + img("mail", "Email")
+      + '<a href="mailto:' + escapeAttr(email) + '" style="color:#555;text-decoration:none;font-weight:bold;">' + escapeHtml(email) + '</a>'
+      + '</div>';
+  }
+  if (d.phone) {
+    html += '<div style="font-family:' + FONT + ';font-size:11px;color:#777;line-height:1.8;padding-bottom:2px;">'
+      + img("phone", "Phone")
+      + '<a href="tel:' + escapeAttr(phoneTel) + '" style="color:#777;text-decoration:none;">' + escapeHtml(d.phone) + '</a>'
+      + '</div>';
+  }
+  // Web (always)
+  html += '<div style="font-family:' + FONT + ';font-size:11px;color:#777;line-height:1.8;padding-bottom:8px;">'
+    + img("globe", "Web")
+    + '<a href="https://www.smartvelo-mobility.com" style="color:#555;text-decoration:none;font-weight:bold;">www.smartvelo-mobility.com</a>'
+    + '</div>';
+
+  // Social row
+  const socials = [];
+  socials.push(
+    '<a href="https://instagram.com/smartvelo.mobility" style="color:#777;text-decoration:none;">'
+    + img("instagram", "Instagram")
+    + 'smartvelo.mobility</a>'
+  );
+  socials.push(
+    '<a href="https://www.linkedin.com/company/smartvelo-mobility" style="color:#555;text-decoration:none;">'
+    + img("linkedin", "LinkedIn")
+    + 'smartvélo mobility</a>'
+  );
+  if (d.linkedin) {
+    socials.push(
+      '<a href="' + escapeAttr(d.linkedin) + '" style="color:#777;text-decoration:none;">'
+      + img("linkedin", "LinkedIn")
+      + escapeHtml(fullName) + '</a>'
+    );
+  }
+  html += '<div style="font-family:' + FONT + ';font-size:11px;color:#777;line-height:1.8;padding-bottom:10px;">'
+    + socials.join("&nbsp;&nbsp;&nbsp;") + '</div>';
+
+  // Address
+  html += '<div style="font-family:' + FONT + ';font-size:10px;color:#999;line-height:1.8;padding-bottom:2px;">'
+    + img("map-pin", "Address")
+    + '<a href="' + escapeAttr(addrUrl) + '" style="color:#999;text-decoration:none;">' + addrFull + '</a>'
+    + '</div>';
+
+  // Delivery — always shown for mobility, never for service
+  if (company.hasDelivery) {
+    const deliveryFull = t.deliveryPrefix + " " + company.delivery + "&nbsp;·&nbsp;" + city;
+    const deliveryUrl = "https://maps.google.com/?q=" + encodeURIComponent(company.delivery + ", " + city);
+    html += '<div style="font-family:' + FONT + ';font-size:10px;color:#999;line-height:1.8;padding-bottom:8px;">'
+      + img("truck", "Delivery")
+      + '<a href="' + escapeAttr(deliveryUrl) + '" style="color:#999;text-decoration:none;">' + deliveryFull + '</a>'
+      + '</div>';
+  } else {
+    html += '<div style="height:6px;line-height:1px;font-size:1px;">&nbsp;</div>';
+  }
+
+  // Legal
+  html += '<div style="font-family:' + FONT + ';font-size:9px;color:#bbb;line-height:1.4;">'
+    + escapeHtml(company.name) + '&nbsp;·&nbsp;' + escapeHtml(register) + '&nbsp;·&nbsp;' + escapeHtml(director)
+    + '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+function generatePlainText(d) {
+  const lang = (d.language === "en") ? "en" : "de";
+  const t = I18N[lang];
+  const company = COMPANIES[d.company];
+  const city = lang === "en" ? company.city_en : company.city_de;
+  const register = lang === "en" ? company.register_en : company.register_de;
+  const director = lang === "en" ? company.director_en : company.director_de;
+  const fullName = (d.firstName + " " + d.lastName).trim();
+  let email = "";
+  if (d.emailOverride && d.emailCustom) email = d.emailCustom;
+  else if (d.firstName) email = emailLocal(d.firstName) + "@smart-velo.com";
+
+  let lines = [];
+  lines.push(d.greeting || t.greeting);
+  lines.push("");
+  if (fullName) lines.push(fullName);
+  if (d.position) lines.push(d.position);
+  lines.push("");
+  if (email) lines.push("E: " + email);
+  if (d.phone) lines.push("T: " + d.phone);
+  lines.push("W: smartvelo-mobility.com");
+  lines.push("");
+  lines.push("Instagram: smartvelo.mobility");
+  lines.push("LinkedIn: linkedin.com/company/smartvelo-mobility");
+  if (d.linkedin) lines.push(d.linkedin);
+  lines.push("");
+  lines.push(company.name);
+  lines.push(company.address + ", " + city);
+  if (company.hasDelivery) {
+    lines.push(t.deliveryPrefix + " " + company.delivery);
+  }
+  lines.push(register + " · " + director);
+  return lines.join("\n");
+}
+
+function getFormData() {
+  const f = document.getElementById("sigForm");
+  return {
+    language: f.language.value,
+    company: f.company.value,
+    firstName: f.firstName.value.trim(),
+    lastName: f.lastName.value.trim(),
+    emailOverride: f.emailOverride.checked,
+    emailCustom: f.emailCustom.value.trim(),
+    position: f.position.value.trim(),
+    greeting: f.greeting.value.trim(),
+    phone: f.phone.value.trim(),
+    linkedin: f.linkedin.value.trim()
+  };
+}
+
+let statusTimeout;
+function setStatus(msg, type) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = type || "";
+  clearTimeout(statusTimeout);
+  if (msg) statusTimeout = setTimeout(() => { el.textContent = ""; el.className = ""; }, 4000);
+}
+
+function updatePreview() {
+  const d = getFormData();
+  const f = document.getElementById("sigForm");
+
+  // Update email field state
+  f.emailCustom.disabled = !d.emailOverride;
+  if (!d.emailOverride && d.firstName) {
+    f.emailCustom.placeholder = emailLocal(d.firstName) + "@smart-velo.com";
+  } else if (!d.emailOverride) {
+    f.emailCustom.placeholder = "vorname@smart-velo.com";
+  }
+
+  // Update company hint
+  const company = COMPANIES[d.company];
+  const companyHint = document.getElementById("companyHint");
+  if (company.hasDelivery) {
+    companyHint.textContent = "Lieferadresse: " + company.delivery;
+  } else {
+    companyHint.textContent = "Keine separate Lieferadresse";
+  }
+
+  // Render preview
+  const html = generateSignature(d);
+  document.getElementById("preview").innerHTML = html;
+
+  // Preview meta
+  const meta = document.getElementById("previewMeta");
+  const sizeKB = (new Blob([html]).size / 1024).toFixed(1);
+  const langLabel = d.language === "en" ? "EN" : "DE";
+  meta.textContent = langLabel + " · " + sizeKB + " KB";
+}
+
+// Language switch handler
+function setupLanguageSwitch() {
+  const buttons = document.querySelectorAll("#langSwitch button");
+  const langInput = document.getElementById("language");
+  const greetingInput = document.getElementById("greeting");
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const newLang = btn.dataset.lang;
+      if (newLang === langInput.value) return;
+
+      buttons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      langInput.value = newLang;
+
+      // Auto-update greeting if it matches a known default
+      const currentGreeting = greetingInput.value.trim();
+      if (KNOWN_GREETINGS.indexOf(currentGreeting) >= 0 || currentGreeting === "") {
+        greetingInput.value = I18N[newLang].greeting;
+      }
+
+      updatePreview();
+    });
+  });
+}
+
+async function copyToClipboard() {
+  const d = getFormData();
+  if (!d.firstName || !d.lastName) {
+    setStatus("Bitte Vor- und Nachname ausfüllen.", "error");
+    return;
+  }
+  const html = generateSignature(d);
+  const plain = generatePlainText(d);
+
+  try {
+    if (navigator.clipboard && window.ClipboardItem) {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" })
+      });
+      await navigator.clipboard.write([item]);
+      setStatus("✓ Signatur kopiert. Jetzt in Outlook einfügen (Strg/Cmd+V).", "success");
+      return;
+    }
+  } catch (e) {
+    console.warn("Clipboard API failed, falling back:", e);
+  }
+
+  // Fallback: contenteditable + execCommand("copy")
+  try {
+    fallbackCopy(html);
+    setStatus("✓ Signatur kopiert. Jetzt in Outlook einfügen (Strg/Cmd+V).", "success");
+  } catch (e) {
+    console.error(e);
+    setStatus("Kopieren fehlgeschlagen. Browser unterstützt Clipboard nicht.", "error");
+  }
+}
+
+function fallbackCopy(html) {
+  const div = document.createElement("div");
+  div.contentEditable = "true";
+  div.innerHTML = html;
+  div.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+  document.body.appendChild(div);
+  const range = document.createRange();
+  range.selectNodeContents(div);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  const ok = document.execCommand("copy");
+  sel.removeAllRanges();
+  document.body.removeChild(div);
+  if (!ok) throw new Error("execCommand copy failed");
+}
+
+function downloadHTML() {
+  const d = getFormData();
+  if (!d.firstName || !d.lastName) {
+    setStatus("Bitte Vor- und Nachname ausfüllen.", "error");
+    return;
+  }
+  const sigHtml = generateSignature(d);
+  const fullDoc = '<!DOCTYPE html>\n<html lang="de">\n<head>\n<meta charset="UTF-8">\n<title>E-Mail-Signatur — ' + escapeHtml(d.firstName + " " + d.lastName) + '</title>\n</head>\n<body>\n' + sigHtml + '\n</body>\n</html>\n';
+  const blob = new Blob([fullDoc], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const safeName = (d.firstName + "_" + d.lastName).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, "");
+  a.href = url;
+  a.download = "signatur_" + safeName + ".htm";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setStatus("✓ Datei heruntergeladen.", "success");
+}
+
+// Wire up
+document.addEventListener("DOMContentLoaded", function() {
+  const form = document.getElementById("sigForm");
+  form.addEventListener("input", updatePreview);
+  form.addEventListener("change", updatePreview);
+  document.getElementById("copyBtn").addEventListener("click", copyToClipboard);
+  document.getElementById("downloadBtn").addEventListener("click", downloadHTML);
+  setupLanguageSwitch();
+  updatePreview();
+});
+</script>
+
+</body>
+</html>
